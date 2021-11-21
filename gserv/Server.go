@@ -21,6 +21,18 @@ type Server struct {
 	Port int
 }
 
+// 定义当前客户端链接所绑定的handle api
+// fixme 可以优化为用于自定义
+func EchoToClient(conn *net.TCPConn, data []byte, cnt int) error {
+	// 回显业务
+	log.Printf("[Conn Handle] EchoToClient ...")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		log.Printf("[Conn Handle] write to client error: %v", err)
+		return err
+	}
+	return nil
+}
+
 // 启动服务器
 // 非阻塞方法，只用于启动服务器
 func (s *Server) Start() {
@@ -39,6 +51,8 @@ func (s *Server) Start() {
 			return
 		}
 		log.Println("Start gnet server successfully, ", s.Name, "is listening...")
+		var cid uint32
+		cid = 0
 		// 3. 阻塞等待客户端连接，处理客户端业务（读写）
 		for {
 			// 若有连接过来，阻塞会返回
@@ -47,22 +61,11 @@ func (s *Server) Start() {
 				log.Println("Error accept connection: ", err)
 				continue
 			}
-			go func() {
-				for {
-					buf := make([]byte, 512)
-					count, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("Error read connection: ", err)
-						return
-					}
 
-					//直接写回
-					if _, err := conn.Write(buf[:count]); err != nil {
-						fmt.Println("Error write connection:", err)
-						return
-					}
-				}
-			}()
+			// 创建链接对象，并绑定业务处理方法，然后启动链接业务处理逻辑
+			dealConn := NewConnection(conn, cid, EchoToClient)
+			cid++
+			go dealConn.Start()
 		}
 	}()
 
