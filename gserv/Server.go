@@ -54,7 +54,7 @@ func (s *Server) Start() {
 			}
 
 			// 创建链接对象，并绑定业务处理方法，然后启动链接业务处理逻辑
-			dealConn := NewConnection(conn, cid, EchoToClient)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 			go dealConn.Start()
 		}
