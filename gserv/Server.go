@@ -19,18 +19,9 @@ type Server struct {
 	IP string
 	// 服务器监听的端口
 	Port int
-}
 
-// 定义当前客户端链接所绑定的handle api
-// fixme 可以优化为用于自定义
-func EchoToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	// 回显业务
-	log.Printf("[Conn Handle] EchoToClient ...")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		log.Printf("[Conn Handle] write to client error: %v", err)
-		return err
-	}
-	return nil
+	// 目前一个服务器只能绑定一个Router，即所有处理逻辑相同
+	Router gifac.IRouter
 }
 
 // 启动服务器
@@ -87,6 +78,11 @@ func (s *Server) Serve() {
 	select {}
 }
 
+func (s *Server) AddRouter(router gifac.IRouter) {
+	s.Router = router
+	log.Println("Add Router: ", s.Router)
+}
+
 // Server工厂方法，用于创建Server实例
 func NewServer(name string) gifac.IServer {
 	s := &Server{
@@ -94,6 +90,7 @@ func NewServer(name string) gifac.IServer {
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
 	return s
 }

@@ -15,21 +15,22 @@ type Connection struct {
 	ConnId uint32
 	// 当前链接的状态
 	IsClosed bool
-	// 当前链接的业务处理方法
-	HandleAPI gifac.HandleFunc
 
 	// 告知链接是否需要终止的通道
 	ExitChan chan bool
+
+	// 链接关联的处理方法
+	Router gifac.IRouter
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, callbackApi gifac.HandleFunc) *Connection {
+func NewConnection(conn *net.TCPConn, connId uint32, router gifac.IRouter) *Connection {
 	c := &Connection{
-		Conn:      conn,
-		ConnId:    connId,
-		HandleAPI: callbackApi,
-		IsClosed:  false,
+		Conn:     conn,
+		ConnId:   connId,
+		IsClosed: false,
 		// buffered channel
 		ExitChan: make(chan bool, 1),
+		Router:   router,
 	}
 	return c
 }
@@ -42,17 +43,24 @@ func (c *Connection) StartReader() {
 
 	for {
 		buf := make([]byte, 512)
-		cnt, err := c.Conn.Read(buf)
+		_, err := c.Conn.Read(buf)
 		if err != nil {
 			log.Printf("Error reading connection: %s\n", err)
 			continue
 		}
 
-		// 调用链接绑定的HandlAPI处理接收到的数据
-		if err := c.HandleAPI(c.Conn, buf, cnt); err != nil {
-			log.Printf("ConnId:%d, handle read data error:%v\n", c.ConnId, err)
-			break
+		//从路由中，找到注册绑定的Conn对应的router处理方法
+		req := Request{
+			conn: c,
+			data: buf,
 		}
+
+		go func(request gifac.IRequest) {
+			c.Router.PreHandle(request)
+			c.Router.Handle(request)
+			c.Router.PostHandle(request)
+		}(&req)
+
 	}
 
 }
@@ -90,6 +98,6 @@ func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-func (c *Connection) Send() error {
+func (c *Connection) Send(data []byte) error {
 	return nil
 }
