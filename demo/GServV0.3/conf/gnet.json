@@ -1,0 +1,6 @@
+{
+    "name": "Gnet Server V0.3",
+    "host": "localhost",
+    "port":9000,
+    "version": "1.0"
+}

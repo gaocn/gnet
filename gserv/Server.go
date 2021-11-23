@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/gaocn/gnet/gifac"
+	"github.com/gaocn/gnet/utils"
 )
 
 // IServer接口的实现类
@@ -27,6 +28,8 @@ type Server struct {
 // 启动服务器
 // 非阻塞方法，只用于启动服务器
 func (s *Server) Start() {
+	log.Printf("[Gnet] Server config: %s", utils.Conf)
+
 	go func() {
 		log.Printf("Starting Server listening at %s:%d\n", s.IP, s.Port)
 		// 1. 获取一个TCP的地址
@@ -42,8 +45,7 @@ func (s *Server) Start() {
 			return
 		}
 		log.Println("Start gnet server successfully, ", s.Name, "is listening...")
-		var cid uint32
-		cid = 0
+		var cid uint32 = 0
 		// 3. 阻塞等待客户端连接，处理客户端业务（读写）
 		for {
 			// 若有连接过来，阻塞会返回
@@ -86,10 +88,10 @@ func (s *Server) AddRouter(router gifac.IRouter) {
 // Server工厂方法，用于创建Server实例
 func NewServer(name string) gifac.IServer {
 	s := &Server{
-		Name:      name,
+		Name:      utils.Conf.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
+		IP:        utils.Conf.Host,
+		Port:      utils.Conf.Port,
 		Router:    nil,
 	}
 	return s

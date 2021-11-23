@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/gaocn/gnet/gifac"
+	"github.com/gaocn/gnet/utils"
 )
 
 // 链接模块的实现
@@ -42,7 +43,7 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.Conf.MaxPacketSize)
 		_, err := c.Conn.Read(buf)
 		if err != nil {
 			log.Printf("Error reading connection: %s\n", err)
